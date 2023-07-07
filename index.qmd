@@ -1,5 +1,5 @@
 ---
-title: "immigration-final-ex"
+title: "Immigration Attitude"
 author: "Vaangmaya Rebba"
 execute: 
   echo: false
@@ -7,9 +7,60 @@ execute:
   warning: false
 ---
 
+## Question
+
+What is the expected immigration attitude of someone who is liberal and starts with an attitude of 6? See Chapter 6 for details.
+
+## Model
+
+$$y_i = \beta_0  + \beta_1 x_{1,i} + \beta_2 x_{2,i}$$ 
+with $y = att\_end$, $x_1 = att\_start$, and $x_2 = liberal$.
 
 ```{r}
+library(tidyverse)
+library(primer.data)
+library(rstanarm)
+```
+
+```{r}
+x <- trains |> 
+  select(att_start, att_end, liberal)
+```
+
+```{r}
+fit_obj <- stan_glm(
+  data = x,
+  formula = att_end ~ liberal + att_start,
+  family = gaussian,
+  refresh = 0,
+  seed = 9
+)
+```
+
+```{r}
+newobs <- tibble(att_start = 6, liberal = TRUE)
+
+pe <- posterior_epred(object = fit_obj,
+                      newdata = newobs) |> 
+        as_tibble()
 
 ```
+
+```{r}
+pe |> 
+  ggplot(aes(x = `1`)) +
+    geom_histogram(aes(y = after_stat(count/sum(count))),
+                   bins = 100) +
+    labs(title = "Posterior for Attitude of Atleast 6 and are Liberal",
+         subtitle = "Note that the plot is very similar to the one created with the parameters",
+         x = "Attitude",
+         y = "Probability",
+         caption = "Data source: Trains") + 
+    scale_x_continuous(labels = scales::number_format(accuracy = 1)) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+    theme_classic()
+```
+
+
 
 
